@@ -1,4 +1,3 @@
-from random import gauss
 import numpy as np
 
 from pymatgen.core import Structure
@@ -6,8 +5,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from typing import Optional, Tuple, List, Dict
 from types import FunctionType
-from functools import partial
-from const.TableOfElement import toe
+from .const.TableOfElement import toe
 
 from math import floor
 
@@ -29,7 +27,7 @@ class RDF :
         self.sigma = float(sigma)
         
         self.edges = np.arange(0.0, self.r_max + self.dr, self.dr)
-        self.r = 0.5 * (self.edges[:-1] * self.edges[1:])
+        self.r = 0.5 * (self.edges[:-1] + self.edges[1:])
         self.shell_vol = _shell_volumes(self.edges)
         
         self.N = len(self.S)
@@ -45,6 +43,15 @@ class RDF :
         self.g_partial: Dict[str, np.ndarray] = {}
         self.g_single_atom: Dict[str, Dict[np.int64, np.ndarray]] = {}
     
+        self.rcut_single_atom: Dict[str, Dict[int, Tuple[float,float]]] = {}
+        
+        # Get radial distribution function and rcut
+        self.compute_single_atom()
+        self.rcut = self.certain_rcut()
+        
+        self.g_single_atom_cuted: Dict[str, Dict[np.int64, np.ndarray]] = {}
+        self.rdf_cut()
+        
     def _accumulate_counts(self,
                            center_indice: int) -> np.ndarray: 
         """
@@ -67,7 +74,7 @@ class RDF :
         for nb in neighbor:
             index_r = float(nb[1])/self.dr
             index_r = floor(index_r)+1 if (index_r - int(index_r) > 0.5) else floor(index_r)
-            index_s = nb.label
+            index_s = toe[''.join([i for i in nb.label if not i.isdigit()])]
             counts[index_r][index_s] += 1
             
         return counts        
@@ -85,7 +92,7 @@ class RDF :
         for key in atom_dict:
             flag = 0
             tmp_g_dict = {}
-            tmp_meta_dict = {}
+            tmp_rcut_dict = {}
             
             for indice in atom_dict[key]:
                 tmp = int(indice)
@@ -97,13 +104,33 @@ class RDF :
                     g[~np.isfinite(g)] = 0.0
                 
                 g = _smooth(g, self.sigma)
-                subkey = indice 
+                rcut = _find_first_two_peaks_and_valleys(self.r, g)
+                subkey = int(indice) 
                 tmp_g_dict[subkey] = g 
-                # tmp_meta_dict[subkey]
+                tmp_rcut_dict[subkey] = (rcut["rcut1"],rcut["rcut2"])
             self.g_single_atom[key] = tmp_g_dict
-            element_tmp[key] = tmp_meta_dict 
-        #self.meta["single"]
+            element_tmp[key] = tmp_rcut_dict 
+        self.rcut_single_atom = element_tmp
         return self.g_single_atom
+    
+    def certain_rcut(self):
+        """
+        choice max single_atom_rcut for structure rcut 
+        """
+        rcut_max = 0.0
+        for element in self.rcut_single_atom.values():
+            for rcut1, rcut2 in element.values():
+                rcut_max = np.max([rcut_max, rcut1])
+        return rcut_max
+    
+    def rdf_cut(self):
+        cut_indice = int(self.rcut/self.dr)
+        for name, value in self.g_single_atom.items():
+            tmp_dict:dict ={}
+            for subname, g in value.items():
+                tmp_dict[subname] = g[:cut_indice]
+            self.g_single_atom_cuted[name] = tmp_dict
+        return self.g_single_atom_cuted
 # TODO:finish it
 
 # === Local function === # 
@@ -112,7 +139,7 @@ from typing import Dict, List, Tuple, Iterable, Optional
 from . import _HAS_SCIPY
 
 def _shell_volumes(edges: np.ndarray) -> np.ndarray:
-    """$\Delta V = \frac{4\pi}{3} (r_{i+1}^3-r_{i}^3)$ for each radial shell given bin edges.
+    r"""$\Delta V = \frac{4 \pi}{3} (r_{i+1}^3-r_{i}^3)$ for each radial shell given bin edges.
  
     Args:
         edges (np.ndarray): all edges
@@ -125,10 +152,11 @@ def _shell_volumes(edges: np.ndarray) -> np.ndarray:
 def _smooth(y:np.ndarray, sigma_bins: float) -> np.ndarray:
     g_new = y.copy()
     gaussian: FunctionType
+
     if sigma_bins and sigma_bins > 0:
         if _HAS_SCIPY: 
             from . import gaussian_filter1d            
-            gaussian = gaussian_filter1d
+            gaussian = lambda xx: gaussian_filter1d(xx, sigma_bins)
         
         else:
             
@@ -138,12 +166,12 @@ def _smooth(y:np.ndarray, sigma_bins: float) -> np.ndarray:
             kernel /= kernel.sum()    
             gaussian = lambda xx: np.convolve(xx, kernel, mode="same")
 
-        for i in range(y.shape()[1]):        
+        for i in range(y.shape[1]):        
             g_new[:,i] = gaussian(y[:,i])
     
     return g_new
 
-""" 
+
 def _find_first_two_peaks_and_valleys(
     r: np.ndarray,
     g: np.ndarray,
@@ -155,8 +183,8 @@ def _find_first_two_peaks_and_valleys(
     min_run: int = 3,
     abs_floor: float = 1e-8
 ) -> Dict[str, Optional[float]]:
-    out = {"first_peak_r": None, "second_peak_r": None, "rcut1": None, "rcut2":None}
-    y = g 
+    out: dict[str, Optional[float]] = {"first_peak_r": None, "second_peak_r": None, "rcut1": None, "rcut2":None}
+    y = np.sum(g, axis=1) 
     
     # find peaks
     if _HAS_SCIPY:
@@ -225,4 +253,3 @@ def _find_first_two_peaks_and_valleys(
         
     return out
 
-"""
