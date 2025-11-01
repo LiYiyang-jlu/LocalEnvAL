@@ -19,7 +19,7 @@ class SLEF:
             sigma= sigma
         )
         self.S = self.rdf.S 
-        self.species = sorted(list(set([str(s) for s in self.S.species])))
+        self.species = sorted(list(set([("".join(filter(str.isalpha, str(s)))) for s in self.S.species])))
         self.results = self.rdf.rdf_cut()
         self.rcut = self.rdf.rcut
         self.r = self.rdf.r

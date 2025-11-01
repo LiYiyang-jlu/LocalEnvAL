@@ -34,9 +34,9 @@ class RDF :
         self.V = self.S.lattice.volume
         self.rho = self.N /self.V 
         
-        self.species : List[str] = sorted(list({str(s.specie) for s in self.S}) )
+        self.species : List[str] = sorted(list(set([("".join(filter(str.isalpha, str(s)))) for s in self.S.species]))) #sorted(list({str(s.specie) for s in self.S}) )
         self._species_indices : Dict [str, np.ndarray] = {
-            sp: np.array([i for i, site in enumerate(self.S) if str(site.specie) == sp ], dtype= int) for sp in self.species
+            sp: np.array([i for i, site in enumerate(self.S) if "".join(filter(str.isalpha, str(site.specie))) == sp ], dtype= int) for sp in self.species
         }
         
         self.g_total: Optional[np.ndarray] = None

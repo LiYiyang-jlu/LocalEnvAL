@@ -39,10 +39,10 @@ def single_atom_rdf_plot(r, data: np.ndarray, title: str = 'unknown'):
     
     return fig
 
-def rcut_plot(r, rcut, rdf_fig:go.Figure):
+def rcut_plot(r, rcut, rdf_fig:go.Figure, z_max:float=5):
     fig = rdf_fig
     y = np.linspace(0, len(const.toe.keys()), 10)
-    z = np.linspace(0, 5, 10)
+    z = np.linspace(0, z_max, 10)
     Y, Z = np.meshgrid(y, z)
     x = np.full_like(Y, rcut)
     fig.add_trace(go.Surface(
