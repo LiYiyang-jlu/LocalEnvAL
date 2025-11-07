@@ -5,7 +5,7 @@ from pymatgen.symmetry.analyzer import SpacegroupAnalyzer
 
 from typing import Optional, Tuple, List, Dict
 from types import FunctionType
-from .const.TableOfElement import toe
+from .const.PeriodicTable import PerTab
 
 from math import floor
 
@@ -69,12 +69,12 @@ class RDF :
         #counts = np.zeros(len(self.r), dtype=float)
         neighbor_all = self.S.get_all_neighbors(r= self.r_max, include_image= True)
         neighbor = neighbor_all[center_indice]
-        counts:np.ndarray = np.zeros(( len(self.edges), len(toe.keys()) ))
+        counts:np.ndarray = np.zeros(( len(self.edges), len(PerTab.keys()) ))
         
         for nb in neighbor:
             index_r = float(nb[1])/self.dr
             index_r = floor(index_r)+1 if (index_r - int(index_r) > 0.5) else floor(index_r)
-            index_s = toe[''.join([i for i in nb.label if not i.isdigit()])]
+            index_s = PerTab[''.join([i for i in nb.label if not i.isdigit()])]
             counts[index_r][index_s] += 1
             
         return counts        

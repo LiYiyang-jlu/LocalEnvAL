@@ -1,1 +1,1 @@
-from .TableOfElement import *
+from .PeriodicTable import *

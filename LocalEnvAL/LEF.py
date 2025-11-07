@@ -1,6 +1,8 @@
 from pymatgen.core import Structure
 from .RDF import RDF
 from .soap_utils import *
+
+import numpy as np
 class SLEF:
     """Structure Local Environment Frame
     """
@@ -49,7 +51,11 @@ class SLEF:
             yield le
 
 class LEF:
-    def __init__(self, structure, indice, rdf, soap, parent) -> None:
+    def __init__(self, structure, 
+                 indice, 
+                 rdf: np.ndarray, 
+                 soap, 
+                 parent: SLEF) -> None:
         self.S = structure
         self.indice = indice
         self.rdf = rdf
@@ -73,7 +79,7 @@ def creat_local_env_list(structure: Structure, rdf : RDF, soap, x_lim, obj):
     for key in rdf.g_single_atom.keys():
         for sub_key in rdf.g_single_atom[key].keys():
             radial_dist_func = rdf.g_single_atom[key][sub_key]
-            radial_dist_func = radial_dist_func[:x_lim]
+            radial_dist_func : np.ndarray = np.array(radial_dist_func[:x_lim])
             local_env = LEF(structure= structure,
                             indice= int(sub_key), 
                             rdf= radial_dist_func,#rdf.g_single_atom[key][sub_key],#[:r_len], 
