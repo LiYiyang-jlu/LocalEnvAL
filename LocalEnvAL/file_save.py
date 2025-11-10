@@ -1,10 +1,9 @@
-from math import ceil
 import pickle as pk 
 import os
 import re
 from .LEF import SLEF
 def SLEF_save(slef: SLEF, path:str = "./output/") -> None:
-    volume = ceil(slef.S.volume)
+    volume = round(slef.S.volume,2)
     space_group_info = slef.S.get_space_group_info()[0]
     name = f"{slef.S.formula}({space_group_info}){volume}.SLEF"
     illegal_chars = r'[<>:"/\|?*]'

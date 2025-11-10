@@ -120,6 +120,8 @@ class RDF :
         rcut_max = 0.0
         for element in self.rcut_single_atom.values():
             for rcut1, rcut2 in element.values():
+                if rcut1 == None:
+                    continue
                 rcut_max = np.max([rcut_max, rcut1])
         return rcut_max
     

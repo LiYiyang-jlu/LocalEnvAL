@@ -67,14 +67,15 @@ class LEF:
        # log = '--- Local Enviroment ---\n'
        # log += f'rdf= {self.rdf}\n'
        # log += f'soap= {}'   
-        log = self.specie 
+        log = f"{self.parent.S.formula}: {self.specie}{self.indice}" 
         return log    
 
 
         
 
-def creat_local_env_list(structure: Structure, rdf : RDF, soap, x_lim, obj):
+def creat_local_env_list(structure: Structure, rdf : RDF, soap, x_lim, obj) -> list[LEF]:
     local_env_list: list[LEF] = []
+
     rdf.compute_single_atom()
     for key in rdf.g_single_atom.keys():
         for sub_key in rdf.g_single_atom[key].keys():

@@ -12,5 +12,6 @@ from pymatgen.core import Structure
 from .RDF import RDF
 from .visualize import *
 from .soap_utils import *
+from .similarity_utils import *
 from .LEF import LEF, SLEF
 from .file_save import SLEF_read, SLEF_save
